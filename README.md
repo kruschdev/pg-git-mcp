@@ -42,7 +42,7 @@ You can instantly import any local `.git` repository. PG-Git will natively parse
 npm run import
 ```
 
-**3. Add to Claude Desktop (`claude_desktop_config.json`):**
+**3. Add to your Agent / IDE Configuration (e.g. `mcp_config.json`):**
 ```json
 {
   "mcpServers": {
@@ -72,11 +72,11 @@ To effectively use PG-Git, simply speak to your IDE agent normally. It will use 
 
 **Example 1: Finding specific logic**
 > **You:** "Where do we handle the temporal decay for the memory MCP?"
-> **Claude:** *[Calls `pg_git_semantic_search`]* "I found the logic in `server/index.js` inside the `krusch-memory-mcp` repo. It uses the `exp(-DECAY_RATE * age_in_days)` formula."
+> **Agent:** *[Calls `pg_git_semantic_search`]* "I found the logic in `server/index.js` inside the `krusch-memory-mcp` repo. It uses the `exp(-DECAY_RATE * age_in_days)` formula."
 
 **Example 2: Reading a repository tree**
 > **You:** "What is the folder structure for the pg-git project?"
-> **Claude:** *[Calls `pg_git_read_tree`]* "Here is the root directory structure..."
+> **Agent:** *[Calls `pg_git_read_tree`]* "Here is the root directory structure..."
 
 ### How Does Temporal Decay Work?
 When calling `pg_git_semantic_search`, PG-Git returns the highest cosine-similarity matches. However, it applies **Exponential Temporal Decay** based on the blob's `last_seen_at` timestamp. If you have two very similar pieces of code, the *newer* one will have a significantly higher score, preventing your agent from hallucinating based on outdated implementations.
