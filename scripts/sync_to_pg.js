@@ -6,8 +6,9 @@ import crypto from 'crypto';
 import { query, pool } from '../db/pool.js';
 import { hashContent } from '../server/git-engine.js';
 
+import { config } from '../config.js';
+
 const OLLAMA_URL = process.env.OLLAMA_URL || "http://localhost:11434";
-const EMBED_MODEL = process.env.EMBED_MODEL || "nomic-embed-text";
 
 const EXCLUDED_DIRS = new Set(['.git', 'node_modules', 'dist', 'build', '__pycache__']);
 const TEXT_EXTENSIONS = new Set(['.js', '.ts', '.jsx', '.tsx', '.json', '.md', '.txt', '.html', '.css', '.yml', '.yaml', '.sql', '.py', '.sh']);
@@ -17,7 +18,7 @@ async function getEmbedding(text) {
         const res = await fetch(`${OLLAMA_URL}/api/embeddings`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ model: EMBED_MODEL, prompt: text })
+            body: JSON.stringify({ model: config.ai.embedModel, prompt: text })
         });
         if (!res.ok) return null;
         const data = await res.json();

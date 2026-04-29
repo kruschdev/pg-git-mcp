@@ -20,6 +20,12 @@ In the standard AI coding agent ecosystem, searching codebases relies on rigid g
 3. **Local-First Purity**: No cloud APIs. It uses Ollama with `nomic-embed-text` for 100% private, on-device vectorization.
 4. **ACID Compliant**: Native transactions ensure complete safety for multi-node accessibility and concurrent AI swarm agents.
 
+## ⚠️ Not a Replacement for Git
+
+It is critical to understand that PG-Git **does not replace Git** or services like GitHub/GitLab. It does not handle branch merging, rebasing, or pull requests. 
+
+Instead, PG-Git is an **agentic augmentation layer**. You continue to use standard Git for your human-facing source control and team collaboration. PG-Git sits alongside it in your workflow, automatically ingesting your standard Git history to provide your AI agents with a mathematically optimized, semantically searchable clone of your codebase.
+
 ## ⚡ Quick Start
 
 You **must** have [Ollama](https://ollama.com/) running with the `nomic-embed-text` model pulled:
@@ -37,6 +43,10 @@ node db/migrate.js
 ```
 
 **2. Import Your GitHub History**
+
+> [!WARNING]
+> **Choose your embedding model carefully.** You must set your preferred model (via the UI Settings tab or `.env`) *before* running your first import or snapshot. If you change models later, vector dimensions will collide and you will be forced to manually wipe the database and re-embed all repositories from scratch.
+
 You can instantly import any local `.git` repository. PG-Git will natively parse the Git history, generate semantic embeddings for all blobs, and securely deduplicate them into PostgreSQL:
 ```bash
 npm run import

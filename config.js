@@ -41,7 +41,18 @@ export const config = {
         user: envOr('DB_USER', baseConfig.db?.user || 'postgres', 'postgres'),
         password: envOr('DB_PASSWORD', baseConfig.db?.password || '', ''),
         poolSize: baseConfig.db?.poolSize || 10
+    },
+    ai: {
+        embedModel: envOr('EMBED_MODEL', baseConfig.ai?.embedModel, 'nomic-embed-text')
     }
 };
+
+export function updateConfig(newValues) {
+    if (newValues.ai) {
+        baseConfig.ai = { ...baseConfig.ai, ...newValues.ai };
+        config.ai.embedModel = baseConfig.ai.embedModel;
+    }
+    fs.writeFileSync(configPath, JSON.stringify(baseConfig, null, 2), 'utf-8');
+}
 
 export default config;
