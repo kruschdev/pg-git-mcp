@@ -26,6 +26,15 @@ It is critical to understand that PG-Git **does not replace Git** or services li
 
 Instead, PG-Git is an **agentic augmentation layer**. You continue to use standard Git for your human-facing source control and team collaboration. PG-Git sits alongside it in your workflow, automatically ingesting your standard Git history to provide your AI agents with a mathematically optimized, semantically searchable clone of your codebase.
 
+## 🤝 The Agentic Brain (Synergy with Krusch Memory MCP)
+
+PG-Git is designed to be used in tandem with the **[Krusch Memory MCP](https://github.com/kruschdev/krusch-memory-mcp)**. While they both provide semantic memory to your AI agents, they serve two distinct halves of the "Agentic Brain":
+
+- **PG-Git (The Codebase)**: Acts as the structural and semantic memory of your code. It provides the "what" and the "how"—the actual implementation details, file structures, and algorithms.
+- **Krusch Memory MCP (The Context)**: Acts as the episodic and procedural memory. It provides the "why"—the architectural decisions, user preferences, bugs encountered, and high-level project goals.
+
+By running both MCPs simultaneously, your agent can cross-reference the *intent* (Krusch Memory) with the *implementation* (PG-Git), creating a deeply contextualized and autonomous coding workflow.
+
 ## ⚡ Quick Start
 
 You **must** have [Ollama](https://ollama.com/) running with the `nomic-embed-text` model pulled:
