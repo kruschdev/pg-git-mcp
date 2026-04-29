@@ -1,0 +1,124 @@
+:root {
+  --bg-dark: #1e1e1e;
+  --bg-panel: #252526;
+  --border-color: #333333;
+  --text-main: #cccccc;
+  --text-muted: #858585;
+  --accent: #007acc;
+  --accent-hover: #0098ff;
+  --tab-active: #1e1e1e;
+  --tab-inactive: #2d2d2d;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--bg-dark);
+  color: var(--text-main);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.dbos-layout {
+  display: flex;
+  height: 100vh;
+  box-sizing: border-box;
+}
+
+.sidebar {
+  width: 300px;
+  background-color: var(--bg-panel);
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-header {
+  padding: 10px 15px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.main-content {
+  flex: 1;
+  display: flex;
+  background-color: var(--bg-dark);
+}
+
+.editor-tab-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--border-color);
+}
+
+.editor-tab-container:last-child {
+  border-right: none;
+}
+
+.tabs-header {
+  display: flex;
+  background-color: var(--bg-panel);
+  height: 35px;
+}
+
+.tab {
+  padding: 0 15px;
+  display: flex;
+  align-items: center;
+  font-size: 0.85rem;
+  background-color: var(--tab-inactive);
+  color: var(--text-muted);
+  border-right: 1px solid var(--border-color);
+  border-top: 1px solid transparent;
+  cursor: pointer;
+}
+
+.tab.active {
+  background-color: var(--tab-active);
+  color: var(--text-main);
+  border-top: 1px solid var(--accent);
+}
+
+.tab-content {
+  flex: 1;
+  padding: 15px;
+  overflow: auto;
+}
+
+.file-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.file-item {
+  padding: 4px 15px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.file-item:hover {
+  background-color: #2a2d2e;
+  color: #ffffff;
+}
+
+.file-item.active {
+  background-color: #37373d;
+  color: #ffffff;
+}
+
+.code-block {
+  font-family: 'Consolas', 'Courier New', monospace;
+  font-size: 0.9rem;
+  color: #d4d4d4;
+  white-space: pre-wrap;
+}

@@ -1,0 +1,24 @@
+{
+  "name": "pg-git",
+  "version": "1.0.0",
+  "description": "A PostgreSQL-backed Git implementation and semantic memory MCP server for AI IDEs.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "node server/index.js & cd client && npm run dev",
+    "mcp": "node server/mcp.js",
+    "snapshot": "node scripts/sync_to_pg.js",
+    "import": "node scripts/import_github.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "pg": "^8.20.0"
+  }
+}
