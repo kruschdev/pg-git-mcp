@@ -26,6 +26,19 @@ It is critical to understand that PG-Git **does not replace Git** or services li
 
 Instead, PG-Git is an **agentic augmentation layer**. You continue to use standard Git for your human-facing source control and team collaboration. PG-Git sits alongside it in your workflow, automatically ingesting your standard Git history to provide your AI agents with a mathematically optimized, semantically searchable clone of your codebase.
 
+## 🤝 The DBOS Agentic Ecosystem
+
+This project is a dedicated node within the **Krusch DBOS Agentic Ecosystem**. The architecture moves away from monolithic local applications into a highly modular, distributed swarm of specialized Model Context Protocol (MCP) servers.
+
+- **[Krusch DBOS MCP](https://github.com/kruschdev/krusch-dbos-mcp)**: The central Orchestrator and Postgres-backed state machine.
+- **[Krusch Agentic Proxy](https://github.com/kruschdev/krusch-agentic-mcp)**: The Intelligence Layer (LLM Waterfall Router).
+- **[PG-Git MCP](https://github.com/kruschdev/pg-git)**: Source Control Boundary (Code Editing & Commits).
+- **[Krusch Infra MCP](https://github.com/kruschdev/krusch-infra-mcp)**: System Ops Boundary (Docker & SRE).
+- **[Signet MCP](https://github.com/kruschdev/signet)**: Communications Boundary (Email & Calendar).
+- **[Krusch Memory MCP](https://github.com/kruschdev/krusch-memory-mcp)**: Episodic History Boundary (Project-isolated Temporal Memory).
+
+> 🗺️ **Want to see the big picture?** Read the [Ecosystem Blueprint](https://github.com/kruschdev/krusch-dbos-mcp/blob/main/ECOSYSTEM.md) for a complete diagram of how these boundaries fit together.
+
 ## 🤝 The Agentic Brain (Synergy with Krusch Memory MCP)
 
 PG-Git is designed to be used in tandem with the **[Krusch Memory MCP](https://github.com/kruschdev/krusch-memory-mcp)**. While they both provide semantic memory to your AI agents, they serve two distinct halves of the "Agentic Brain":
