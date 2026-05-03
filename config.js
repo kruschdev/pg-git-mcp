@@ -43,7 +43,8 @@ export const config = {
         poolSize: baseConfig.db?.poolSize || 10
     },
     ai: {
-        embedModel: envOr('EMBED_MODEL', baseConfig.ai?.embedModel, 'nomic-embed-text')
+        embedModel: envOr('EMBED_MODEL', baseConfig.ai?.embedModel, 'nomic-embed-text'),
+        ollamaUrl: envOr('OLLAMA_URL', baseConfig.ai?.ollamaUrl, 'http://localhost:11434')
     }
 };
 

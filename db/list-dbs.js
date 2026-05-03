@@ -1,13 +1,14 @@
+import { config } from '../config.js';
 import pg from 'pg';
 
 const { Client } = pg;
 async function main() {
     const client = new Client({
-        host: '10.0.0.85',
-        port: 5434,
+        host: config.db.host,
+        port: config.db.port,
         database: 'postgres',
-        user: 'openclaw',
-        password: 'openclaw_password'
+        user: config.db.user,
+        password: config.db.password
     });
     try {
         await client.connect();

@@ -1,19 +1,12 @@
-version: '3.8'
-
 services:
   app:
     build: .
     ports:
       - "4890:4890"
-      - "4891:4891"
+    env_file:
+      - .env
     environment:
       - NODE_ENV=development
-      - DB_HOST=10.0.0.85
-      - DB_PORT=5434
-      - DB_USER=openclaw
-      - DB_PASSWORD=openclaw_password
-      - DB_NAME=kruschdb
-      - PORT=4890
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:

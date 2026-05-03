@@ -1,58 +1,70 @@
 import React, { useState, useEffect } from 'react';
 import './index.css';
 
+const API_BASE = '';  // Use relative URLs — works with Vite proxy in dev and express.static in prod
+
 function App() {
   const [repos, setRepos] = useState([]);
   const [activeRepo, setActiveRepo] = useState(null);
   const [tree, setTree] = useState([]);
+  const [blobContent, setBlobContent] = useState(null);
+  const [activeBlobName, setActiveBlobName] = useState(null);
   const [embedModel, setEmbedModel] = useState('nomic-embed-text');
   const [savingModel, setSavingModel] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetch('http://localhost:4890/api/config')
+    fetch(`${API_BASE}/api/config`)
       .then(res => res.json())
       .then(data => {
         if (data.ai && data.ai.embedModel) {
           setEmbedModel(data.ai.embedModel);
         }
       })
-      .catch(err => console.error(err));
+      .catch(err => setError(`Failed to load config: ${err.message}`));
 
-    fetch('http://localhost:4890/api/repos')
+    fetch(`${API_BASE}/api/repos`)
       .then(res => res.json())
       .then(data => setRepos(data))
-      .catch(err => console.error(err));
+      .catch(err => setError(`Failed to load repos: ${err.message}`));
   }, []);
-
-  const handleSaveModel = async () => {
-    setSavingModel(true);
-    try {
-      await fetch('http://localhost:4890/api/config', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ai: { embedModel } })
-      });
-    } catch (err) {
-      console.error(err);
-    }
-    setSavingModel(false);
-  };
 
   useEffect(() => {
     if (activeRepo) {
-      fetch(`http://localhost:4890/api/repos/${activeRepo.id}/tree`)
+      setTree([]);
+      setBlobContent(null);
+      setActiveBlobName(null);
+      fetch(`${API_BASE}/api/repos/${activeRepo.id}/tree`)
         .then(res => res.json())
         .then(data => setTree(data))
-        .catch(err => console.error(err));
+        .catch(err => setError(`Failed to load tree: ${err.message}`));
     }
   }, [activeRepo]);
 
+  const handleBlobClick = async (item) => {
+    if (item.type !== 'blob') return;
+    try {
+      const res = await fetch(`${API_BASE}/api/blobs/${item.object_id}`);
+      const data = await res.json();
+      setBlobContent(data.content);
+      setActiveBlobName(item.name);
+    } catch (err) {
+      setError(`Failed to load file: ${err.message}`);
+    }
+  };
+
   return (
     <div className="dbos-layout">
+      {error && (
+        <div className="error-banner" onClick={() => setError(null)}>
+          ⚠️ {error} <span style={{ cursor: 'pointer', marginLeft: '8px' }}>×</span>
+        </div>
+      )}
+
       {/* Sidebar - Explorer */}
       <div className="sidebar">
         <div className="sidebar-header">
-          DBOS Explorer
+          PG-Git Explorer
         </div>
         <ul className="file-list" style={{ paddingTop: '10px' }}>
           {repos.length === 0 ? (
@@ -89,24 +101,6 @@ function App() {
                 outline: 'none'
               }}
             />
-            <button 
-              onClick={handleSaveModel}
-              disabled={savingModel}
-              style={{
-                background: 'var(--accent)',
-                color: '#fff',
-                border: 'none',
-                padding: '6px 8px',
-                borderRadius: '4px',
-                cursor: savingModel ? 'not-allowed' : 'pointer',
-                fontSize: '0.8rem',
-                marginTop: '4px',
-                fontWeight: '600',
-                opacity: savingModel ? 0.7 : 1
-              }}
-            >
-              {savingModel ? 'Saving...' : 'Save Model'}
-            </button>
           </div>
         </div>
       </div>
@@ -125,7 +119,12 @@ function App() {
             {activeRepo ? (
               <ul className="file-list" style={{ padding: 0 }}>
                 {tree.map((item, idx) => (
-                  <li key={idx} className="file-item">
+                  <li 
+                    key={idx} 
+                    className={`file-item ${activeBlobName === item.name ? 'active' : ''}`}
+                    onClick={() => handleBlobClick(item)}
+                    style={{ cursor: item.type === 'blob' ? 'pointer' : 'default' }}
+                  >
                     {item.type === 'tree' ? '📁' : '📄'} {item.name}
                   </li>
                 ))}
@@ -140,12 +139,12 @@ function App() {
         <div className="editor-tab-container">
           <div className="tabs-header">
             <div className="tab active">
-              Code Viewer
+              {activeBlobName || 'Code Viewer'}
             </div>
           </div>
           <div className="tab-content">
             <div className="code-block">
-              {`// DBOS System File Viewer\n// Awaiting file selection from the tree\n\nfunction bootSequence() {\n  System.log("PG-Git operational");\n}`}
+              {blobContent || `// PG-Git Code Viewer\n// Select a file from the tree to view its contents`}
             </div>
           </div>
         </div>

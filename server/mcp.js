@@ -17,25 +17,21 @@ import {
     searchBlobs
 } from './git-engine.js';
 
-import { config } from '../config.js';
+import { getEmbedding } from '../lib/embedding.js';
+import { pool } from '../db/pool.js';
 
-const OLLAMA_URL = process.env.OLLAMA_URL || "http://localhost:11434";
-
-async function getEmbedding(text) {
+// ── Health Check ──────────────────────────────────────────────────────────────
+async function verifyDatabase() {
     try {
-        const res = await fetch(`${OLLAMA_URL}/api/embeddings`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ model: config.ai.embedModel, prompt: text })
-        });
-        if (!res.ok) return null;
-        const data = await res.json();
-        return data.embedding;
-    } catch (e) {
-        return null;
+        await pool.query('SELECT 1');
+        console.error('[pg-git-mcp] Database connection verified.');
+    } catch (err) {
+        console.error('[pg-git-mcp] FATAL: Cannot reach PostgreSQL:', err.message);
+        process.exit(1);
     }
 }
 
+// ── MCP Server ────────────────────────────────────────────────────────────────
 const server = new Server(
     { name: "pg-git-mcp", version: "1.0.0" },
     { capabilities: { tools: {} } }
@@ -153,6 +149,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${request.params.name}`);
         }
     } catch (err) {
+        // Re-throw MCP errors directly so the SDK handles them properly
+        if (err instanceof McpError) throw err;
         return {
             content: [{ type: "text", text: `[Error] Failed executing ${request.params.name}: ${err.message}` }],
             isError: true
@@ -160,7 +158,18 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     }
 });
 
+// ── Lifecycle ─────────────────────────────────────────────────────────────────
+async function shutdown() {
+    console.error('[pg-git-mcp] Shutting down...');
+    try { await pool.end(); } catch (_) { /* best-effort */ }
+    process.exit(0);
+}
+
+process.on('SIGINT', shutdown);
+process.on('SIGTERM', shutdown);
+
 async function main() {
+    await verifyDatabase();
     const transport = new StdioServerTransport();
     await server.connect(transport);
     console.error("[pg-git-mcp] Server running on stdio");

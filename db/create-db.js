@@ -12,8 +12,8 @@ async function main() {
     });
     try {
         await client.connect();
-        await client.query('CREATE DATABASE pg_git');
-        console.log("Database pg_git created successfully.");
+        await client.query(`CREATE DATABASE ${config.db.database}`);
+        console.log(`Database ${config.db.database} created successfully.`);
     } catch(err) {
         if(err.code === '42P04') {
             console.log("Database pg_git already exists.");

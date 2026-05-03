@@ -55,3 +55,50 @@ export async function getRepoRootTree(repoId) {
     `, [repoId]);
     return res.rows[0]?.tree_id || null;
 }
+
+/**
+ * Semantic search with exponential temporal decay.
+ * Score = cosine_similarity * exp(-0.01 * age_in_days)
+ * 
+ * Joins through tree_entries to recover the human-readable file name.
+ * If a blob appears in multiple trees, the most recent tree entry name is used.
+ * 
+ * @param {number[]} vector - The query embedding vector.
+ * @param {number} limit - Max results to return.
+ * @param {number|undefined} repositoryId - Optional repo filter.
+ * @returns {Promise<Array>} Matching rows with similarity, file_name, content, etc.
+ */
+export async function searchBlobs(vector, limit = 5, repositoryId) {
+    const vectorStr = `[${vector.join(',')}]`;
+
+    let sql = `
+        SELECT 
+            b.id,
+            b.repository_id,
+            b.content,
+            b.last_seen_at,
+            COALESCE(
+                (SELECT te.name FROM tree_entries te WHERE te.object_id = b.id LIMIT 1),
+                b.id
+            ) AS file_name,
+            (1 - (b.embedding <=> $1::vector)) 
+                * exp(-0.01 * EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - COALESCE(b.last_seen_at, b.created_at))) / 86400.0)
+            AS similarity
+        FROM blobs b
+        WHERE b.embedding IS NOT NULL
+    `;
+
+    const params = [vectorStr];
+
+    if (repositoryId !== undefined && repositoryId !== null) {
+        params.push(repositoryId);
+        sql += ` AND b.repository_id = $${params.length}`;
+    }
+
+    params.push(limit);
+    sql += ` ORDER BY similarity DESC LIMIT $${params.length}`;
+
+    const res = await query(sql, params);
+    return res.rows;
+}
+

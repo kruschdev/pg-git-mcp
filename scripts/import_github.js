@@ -3,30 +3,10 @@
 import { exec } from 'child_process';
 import util from 'util';
 import path from 'path';
-import fs from 'fs/promises';
 import { query, pool } from '../db/pool.js';
+import { getEmbedding, isEmbeddable, MAX_EMBED_CHARS } from '../lib/embedding.js';
 
 const execPromise = util.promisify(exec);
-
-import { config } from '../config.js';
-
-const OLLAMA_URL = process.env.OLLAMA_URL || "http://localhost:11434";
-const TEXT_EXTENSIONS = new Set(['.js', '.ts', '.jsx', '.tsx', '.json', '.md', '.txt', '.html', '.css', '.yml', '.yaml', '.sql', '.py', '.sh']);
-
-async function getEmbedding(text) {
-    try {
-        const res = await fetch(`${OLLAMA_URL}/api/embeddings`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ model: config.ai.embedModel, prompt: text })
-        });
-        if (!res.ok) return null;
-        const data = await res.json();
-        return data.embedding;
-    } catch (e) {
-        return null;
-    }
-}
 
 async function isGitRepo(targetDir) {
     try {
@@ -49,9 +29,9 @@ async function processBlob(blobHash, name, repoId, targetDir) {
         const ext = path.extname(name).toLowerCase();
         let embeddingStr = null;
 
-        if (TEXT_EXTENSIONS.has(ext)) {
+        if (isEmbeddable(ext)) {
             const text = stdout.toString('utf-8');
-            if (text.length < 50000) {
+            if (text.length < MAX_EMBED_CHARS) {
                 console.log(`[Embed] Generating vector for blob: ${blobHash.substring(0, 7)} (${name})`);
                 const vector = await getEmbedding(text);
                 if (vector) {

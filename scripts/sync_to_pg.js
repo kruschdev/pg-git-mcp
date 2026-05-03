@@ -5,29 +5,9 @@ import path from 'path';
 import crypto from 'crypto';
 import { query, pool } from '../db/pool.js';
 import { hashContent } from '../server/git-engine.js';
+import { getEmbedding, isEmbeddable, MAX_EMBED_CHARS } from '../lib/embedding.js';
 
-import { config } from '../config.js';
-
-const OLLAMA_URL = process.env.OLLAMA_URL || "http://localhost:11434";
-
-const EXCLUDED_DIRS = new Set(['.git', 'node_modules', 'dist', 'build', '__pycache__']);
-const TEXT_EXTENSIONS = new Set(['.js', '.ts', '.jsx', '.tsx', '.json', '.md', '.txt', '.html', '.css', '.yml', '.yaml', '.sql', '.py', '.sh']);
-
-async function getEmbedding(text) {
-    try {
-        const res = await fetch(`${OLLAMA_URL}/api/embeddings`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ model: config.ai.embedModel, prompt: text })
-        });
-        if (!res.ok) return null;
-        const data = await res.json();
-        return data.embedding;
-    } catch (e) {
-        console.error(`[Warn] Ollama embedding failed: ${e.message}`);
-        return null;
-    }
-}
+const EXCLUDED_DIRS = new Set(['.git', 'node_modules', 'dist', 'build', '__pycache__', 'data', 'tmp', '.gemini', '.venv', '.vscode', 'nodes', 'sandbox']);
 
 async function insertBlob(repoId, buffer, filePath) {
     const sha = hashContent(buffer);
@@ -41,10 +21,9 @@ async function insertBlob(repoId, buffer, filePath) {
     }
 
     let embeddingStr = null;
-    if (TEXT_EXTENSIONS.has(ext)) {
+    if (isEmbeddable(ext)) {
         const text = buffer.toString('utf-8');
-        // Simple length limit to prevent passing massive files to Ollama
-        if (text.length < 50000) {
+        if (text.length < MAX_EMBED_CHARS) {
             console.log(`[Embed] Generating semantic vector for: ${path.basename(filePath)}`);
             const vector = await getEmbedding(text);
             if (vector) {
@@ -89,6 +68,11 @@ async function processDirectory(dirPath, repoId) {
                 entries.push({ type: 'tree', name: item.name, object_id: treeSha });
             }
         } else {
+            const stat = await fs.stat(fullPath);
+            if (stat.size > 50 * 1024 * 1024) {
+                console.log(`[Skip] Ignoring large file: ${fullPath} (${Math.round(stat.size/1024/1024)}MB)`);
+                continue;
+            }
             const buffer = await fs.readFile(fullPath);
             const blobSha = await insertBlob(repoId, buffer, fullPath);
             entries.push({ type: 'blob', name: item.name, object_id: blobSha });

@@ -135,11 +135,12 @@ npm run snapshot
 
 | Variable | Description | Default |
 |----------|-------------|---------|
+| `PORT` | Express server port. | `4890` |
 | `DB_HOST` | PostgreSQL Host address. | `localhost` |
-| `DB_PORT` | PostgreSQL Port. | `5432` |
+| `DB_PORT` | PostgreSQL Port. | `5434` |
 | `DB_NAME` | Database Name. | `postgres` |
 | `DB_USER` | Database User. | `postgres` |
-| `DB_PASSWORD` | Database Password. | `postgres` |
+| `DB_PASSWORD` | Database Password. | *(empty)* |
 | `OLLAMA_URL` | The endpoint for your local Ollama instance. | `http://localhost:11434` |
 | `EMBED_MODEL`| The Ollama text-embedding model to use. | `nomic-embed-text` |
 
