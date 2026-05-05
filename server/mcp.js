@@ -76,6 +76,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
                     properties: {
                         query: { type: "string", description: "The search query." },
                         limit: { type: "number", description: "Number of results to return.", default: 5 },
+                        project: { type: "string", description: "Optional project name to filter search (e.g., 'annotated', 'signet', 'krusch-dbos-mcp')." },
                         repository_id: { type: "number", description: "Optional repository ID to limit search to a specific repo." }
                     },
                     required: ["query"]
@@ -124,13 +125,23 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             return { content: [{ type: "text", text: textContent }] };
             
         } else if (request.params.name === "pg_git_semantic_search") {
-            const { query: searchQuery, limit = 5, repository_id } = args;
+            const { query: searchQuery, limit = 5, repository_id, project } = args;
+            
+            // Resolve project name to repository_id if provided
+            let resolvedRepoId = repository_id;
+            if (project && !resolvedRepoId) {
+                const repoRes = await pool.query(`SELECT id FROM repositories WHERE name = $1`, [project]);
+                if (repoRes.rows.length > 0) {
+                    resolvedRepoId = repoRes.rows[0].id;
+                }
+            }
+            
             const vector = await getEmbedding(searchQuery);
             if (!vector) {
                 throw new McpError(ErrorCode.InternalError, "Failed to generate embedding for query via Ollama.");
             }
             
-            const results = await searchBlobs(vector, limit, repository_id);
+            const results = await searchBlobs(vector, limit, resolvedRepoId);
             if (results.length === 0) {
                 return { content: [{ type: "text", text: "No semantically relevant files found." }] };
             }
@@ -138,7 +149,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             let output = `=== 🔍 Semantic Search Results ===\n`;
             for (const r of results) {
                 const dateStr = r.last_seen_at ? new Date(r.last_seen_at).toISOString().split('T')[0] : 'unknown';
-                output += `\n--- Match (Score: ${Number(r.similarity).toFixed(2)}) | File: ${r.file_name} | Repo: ${r.repository_id} | Seen: ${dateStr} ---\n`;
+                const projectTag = r.project ? `[${r.project}]` : '';
+                const pathStr = r.file_path ? ` | Path: ${r.file_path}` : '';
+                output += `\n--- Match (Score: ${Number(r.similarity).toFixed(2)}) | ${projectTag} ${r.file_name}${pathStr} | Seen: ${dateStr} ---\n`;
                 // Preview first 500 chars
                 const content = r.content.toString('utf-8');
                 output += content.substring(0, 500) + (content.length > 500 ? '...\n' : '\n');

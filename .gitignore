@@ -5,3 +5,8 @@ client/node_modules/
 client/dist/
 .DS_Store
 spec.md
+
+# Throwaway debug scripts with hardcoded credentials
+count_memories.js
+list_schema.js
+list_tables.js

@@ -54,6 +54,6 @@ CREATE INDEX IF NOT EXISTS idx_tree_entries_tree ON tree_entries(tree_id);
 
 -- Semantic Embedding Extensions
 CREATE EXTENSION IF NOT EXISTS vector;
-ALTER TABLE blobs ADD COLUMN IF NOT EXISTS embedding vector(768);
+ALTER TABLE blobs ADD COLUMN IF NOT EXISTS embedding vector(1536);
 ALTER TABLE blobs ADD COLUMN IF NOT EXISTS last_seen_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;
 CREATE INDEX IF NOT EXISTS blobs_embedding_idx ON blobs USING hnsw (embedding vector_cosine_ops);

@@ -95,7 +95,7 @@ app.get('/api/blobs/:id', async (req, res) => {
 });
 
 // SPA fallback — serve index.html for all non-API routes
-app.get('*', (req, res) => {
+app.use((req, res, next) => {
     if (req.path.startsWith('/api/')) {
         return res.status(404).json({ error: 'Not found' });
     }

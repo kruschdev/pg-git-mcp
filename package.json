@@ -8,6 +8,7 @@
     "dev": "node server/index.js & cd client && npm run dev",
     "mcp": "node server/mcp.js",
     "snapshot": "node scripts/sync_to_pg.js",
+    "sync-all": "node scripts/sync_all_projects.js",
     "import": "node scripts/import_github.js"
   },
   "keywords": [],

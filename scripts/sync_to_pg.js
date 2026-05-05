@@ -9,14 +9,16 @@ import { getEmbedding, isEmbeddable, MAX_EMBED_CHARS } from '../lib/embedding.js
 
 const EXCLUDED_DIRS = new Set(['.git', 'node_modules', 'dist', 'build', '__pycache__', 'data', 'tmp', '.gemini', '.venv', '.vscode', 'nodes', 'sandbox']);
 
-async function insertBlob(repoId, buffer, filePath) {
+async function insertBlob(repoId, buffer, filePath, rootDir) {
     const sha = hashContent(buffer);
     const ext = path.extname(filePath).toLowerCase();
+    const fileName = path.basename(filePath);
+    const relativePath = path.relative(rootDir, filePath);
     
     // Check if the blob already exists to avoid re-embedding
     const existing = await query(`SELECT id FROM blobs WHERE id = $1`, [sha]);
     if (existing.rows.length > 0) {
-        await query(`UPDATE blobs SET last_seen_at = CURRENT_TIMESTAMP WHERE id = $1`, [sha]);
+        await query(`UPDATE blobs SET last_seen_at = CURRENT_TIMESTAMP, file_name = COALESCE(file_name, $2), file_path = COALESCE(file_path, $3) WHERE id = $1`, [sha, fileName, relativePath]);
         return sha;
     }
 
@@ -34,13 +36,13 @@ async function insertBlob(repoId, buffer, filePath) {
 
     if (embeddingStr) {
         await query(
-            `INSERT INTO blobs (id, repository_id, content, size, embedding) VALUES ($1, $2, $3, $4, $5::vector) ON CONFLICT (id) DO NOTHING`,
-            [sha, repoId, buffer, buffer.length, embeddingStr]
+            `INSERT INTO blobs (id, repository_id, content, size, embedding, file_name, file_path) VALUES ($1, $2, $3, $4, $5::vector, $6, $7) ON CONFLICT (id) DO NOTHING`,
+            [sha, repoId, buffer, buffer.length, embeddingStr, fileName, relativePath]
         );
     } else {
         await query(
-            `INSERT INTO blobs (id, repository_id, content, size) VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO NOTHING`,
-            [sha, repoId, buffer, buffer.length]
+            `INSERT INTO blobs (id, repository_id, content, size, file_name, file_path) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (id) DO NOTHING`,
+            [sha, repoId, buffer, buffer.length, fileName, relativePath]
         );
     }
 
@@ -54,7 +56,7 @@ function hashTree(entries) {
     return crypto.createHash('sha1').update(`tree ${content.length}\0${content}`).digest('hex');
 }
 
-async function processDirectory(dirPath, repoId) {
+async function processDirectory(dirPath, repoId, rootDir) {
     const items = await fs.readdir(dirPath, { withFileTypes: true });
     const entries = [];
 
@@ -63,7 +65,7 @@ async function processDirectory(dirPath, repoId) {
         
         const fullPath = path.join(dirPath, item.name);
         if (item.isDirectory()) {
-            const treeSha = await processDirectory(fullPath, repoId);
+            const treeSha = await processDirectory(fullPath, repoId, rootDir);
             if (treeSha) {
                 entries.push({ type: 'tree', name: item.name, object_id: treeSha });
             }
@@ -74,7 +76,7 @@ async function processDirectory(dirPath, repoId) {
                 continue;
             }
             const buffer = await fs.readFile(fullPath);
-            const blobSha = await insertBlob(repoId, buffer, fullPath);
+            const blobSha = await insertBlob(repoId, buffer, fullPath, rootDir);
             entries.push({ type: 'blob', name: item.name, object_id: blobSha });
         }
     }
@@ -115,7 +117,7 @@ async function main() {
     }
 
     // Process Tree
-    const rootTreeSha = await processDirectory(targetDir, repoId);
+    const rootTreeSha = await processDirectory(targetDir, repoId, targetDir);
     if (!rootTreeSha) {
         console.log('Directory is empty or all ignored.');
         await pool.end();
