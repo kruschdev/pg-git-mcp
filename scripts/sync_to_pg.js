@@ -32,12 +32,11 @@ async function insertBlob(repoId, buffer, filePath, rootDir) {
         const text = buffer.toString('utf-8');
         // Generate summary (first 500 chars) for search result display
         summary = text.substring(0, 500);
-        if (text.length < MAX_EMBED_CHARS) {
-            console.log(`[Embed] Generating semantic vector for: ${path.basename(filePath)}`);
-            const vector = await getEmbedding(text);
-            if (vector) {
-                embeddingStr = `[${vector.join(',')}]`;
-            }
+        console.log(`[Embed] Generating semantic vector for: ${path.basename(filePath)}`);
+        const textToEmbed = text.substring(0, 8000);
+        const vector = await getEmbedding(textToEmbed);
+        if (vector) {
+            embeddingStr = `[${vector.join(',')}]`;
         }
     }
 
