@@ -100,18 +100,18 @@ npm run dev
 
 ## 🚀 Real-World Usage Examples
 
-To effectively use PG-Git, simply speak to your IDE agent normally. It will use the MCP tools (`pg_git_semantic_search`, `pg_git_list_repos`, `pg_git_read_tree`, `pg_git_read_blob`) to interface with the database.
+To effectively use PG-Git, simply speak to your IDE agent normally. It will use the MCP tools (`krusch_context_search_code`, `pg_git_list_repos`, `pg_git_read_tree`, `pg_git_read_blob`) to interface with the database.
 
 **Example 1: Finding specific logic**
 > **You:** "Where do we handle the temporal decay for the memory MCP?"
-> **Agent:** *[Calls `pg_git_semantic_search`]* "I found the logic in `server/index.js` inside the `krusch-memory-mcp` repo. It uses the `exp(-DECAY_RATE * age_in_days)` formula."
+> **Agent:** *[Calls `krusch_context_search_code`]* "I found the logic in `server/index.js` inside the `krusch-memory-mcp` repo. It uses the `exp(-DECAY_RATE * age_in_days)` formula."
 
 **Example 2: Reading a repository tree**
 > **You:** "What is the folder structure for the pg-git project?"
 > **Agent:** *[Calls `pg_git_read_tree`]* "Here is the root directory structure..."
 
 ### How Does Temporal Decay Work?
-When calling `pg_git_semantic_search`, PG-Git returns the highest cosine-similarity matches. However, it applies **Exponential Temporal Decay** based on the blob's `last_seen_at` timestamp. If you have two very similar pieces of code, the *newer* one will have a significantly higher score, preventing your agent from hallucinating based on outdated implementations.
+When calling `krusch_context_search_code`, PG-Git returns the highest cosine-similarity matches. However, it applies **Exponential Temporal Decay** based on the blob's `last_seen_at` timestamp. If you have two very similar pieces of code, the *newer* one will have a significantly higher score, preventing your agent from hallucinating based on outdated implementations.
 
 ---
 

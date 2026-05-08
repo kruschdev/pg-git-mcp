@@ -1,0 +1,7 @@
+feat(sync): implement graceful token truncation and null vector upsert
+
+- Modifies Ollama requests for 'bge-large' (512 num_ctx) with aggressive 2000-character truncation and a top-level `truncate: true` to prevent 500 errors on dense files.
+- Implements UPSERT fallback for NULL vectors to ensure blobs that missed embeddings are automatically reprocessed on the next sync pass.
+- Updates git-engine search results to gracefully return 'summary' and 'storage_mode' for pointer-only blobs.
+- Renames 'pg_git_semantic_search' to 'krusch_context_search_code' in AGENTS.md documentation.
+- Adds supporting utilities for vector backfilling and pointer migrations.

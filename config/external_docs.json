@@ -1,0 +1,14 @@
+[
+  {
+    "name": "cloudflare-agents-docs",
+    "url": "https://developers.cloudflare.com/docs-for-agents/llms-full.txt"
+  },
+  {
+    "name": "anthropic-docs",
+    "url": "https://docs.anthropic.com/en/llms-full.txt"
+  },
+  {
+    "name": "structured-output-benchmark",
+    "url": "https://huggingface.co/datasets/interfaze-ai/sob/raw/main/README.md"
+  }
+]
