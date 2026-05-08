@@ -7,7 +7,7 @@ import { query, pool } from '../db/pool.js';
 import { hashContent } from '../server/git-engine.js';
 import { getEmbedding, isEmbeddable, MAX_EMBED_CHARS } from '../lib/embedding.js';
 
-const EXCLUDED_DIRS = new Set(['.git', 'node_modules', 'dist', 'build', '__pycache__', 'data', 'tmp', '.gemini', '.venv', '.vscode', 'nodes', 'sandbox']);
+const EXCLUDED_DIRS = new Set(['.git', 'node_modules', 'dist', 'build', '__pycache__', 'data', 'tmp', '.gemini', '.venv', '.vscode', 'nodes', 'sandbox', 'logs']);
 
 async function insertBlob(repoId, buffer, filePath, rootDir) {
     const sha = hashContent(buffer);
@@ -16,15 +16,22 @@ async function insertBlob(repoId, buffer, filePath, rootDir) {
     const relativePath = path.relative(rootDir, filePath);
     
     // Check if the blob already exists to avoid re-embedding
-    const existing = await query(`SELECT id FROM blobs WHERE id = $1`, [sha]);
+    const existing = await query(`SELECT id, embedding FROM blobs WHERE id = $1`, [sha]);
+    let needsEmbedding = true;
     if (existing.rows.length > 0) {
         await query(`UPDATE blobs SET last_seen_at = CURRENT_TIMESTAMP, file_name = COALESCE(file_name, $2), file_path = COALESCE(file_path, $3) WHERE id = $1`, [sha, fileName, relativePath]);
-        return sha;
+        if (existing.rows[0].embedding !== null) {
+            return sha;
+        }
+        // If it exists but embedding is null, we fall through to embed it.
     }
 
     let embeddingStr = null;
+    let summary = null;
     if (isEmbeddable(ext)) {
         const text = buffer.toString('utf-8');
+        // Generate summary (first 500 chars) for search result display
+        summary = text.substring(0, 500);
         if (text.length < MAX_EMBED_CHARS) {
             console.log(`[Embed] Generating semantic vector for: ${path.basename(filePath)}`);
             const vector = await getEmbedding(text);
@@ -34,15 +41,16 @@ async function insertBlob(repoId, buffer, filePath, rootDir) {
         }
     }
 
+    // Pointer-based storage: summary + file_path, no full content
     if (embeddingStr) {
         await query(
-            `INSERT INTO blobs (id, repository_id, content, size, embedding, file_name, file_path) VALUES ($1, $2, $3, $4, $5::vector, $6, $7) ON CONFLICT (id) DO NOTHING`,
-            [sha, repoId, buffer, buffer.length, embeddingStr, fileName, relativePath]
+            `INSERT INTO blobs (id, repository_id, size, embedding, file_name, file_path, summary, storage_mode) VALUES ($1, $2, $3, $4::vector, $5, $6, $7, 'pointer') ON CONFLICT (id) DO UPDATE SET embedding = EXCLUDED.embedding`,
+            [sha, repoId, buffer.length, embeddingStr, fileName, relativePath, summary]
         );
     } else {
         await query(
-            `INSERT INTO blobs (id, repository_id, content, size, file_name, file_path) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (id) DO NOTHING`,
-            [sha, repoId, buffer, buffer.length, fileName, relativePath]
+            `INSERT INTO blobs (id, repository_id, size, file_name, file_path, summary, storage_mode) VALUES ($1, $2, $3, $4, $5, $6, 'pointer') ON CONFLICT (id) DO NOTHING`,
+            [sha, repoId, buffer.length, fileName, relativePath, summary]
         );
     }
 
@@ -70,7 +78,20 @@ async function processDirectory(dirPath, repoId, rootDir) {
                 entries.push({ type: 'tree', name: item.name, object_id: treeSha });
             }
         } else {
-            const stat = await fs.stat(fullPath);
+            let stat;
+            try {
+                stat = await fs.stat(fullPath);
+            } catch (e) {
+                if (e.code === 'ENOENT') {
+                    console.log(`[Skip] Broken link or missing file: ${fullPath}`);
+                    continue;
+                }
+                throw e;
+            }
+            if (stat.isDirectory()) {
+                console.log(`[Skip] Ignoring directory symlink: ${fullPath}`);
+                continue;
+            }
             if (stat.size > 50 * 1024 * 1024) {
                 console.log(`[Skip] Ignoring large file: ${fullPath} (${Math.round(stat.size/1024/1024)}MB)`);
                 continue;
