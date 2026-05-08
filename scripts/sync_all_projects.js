@@ -16,6 +16,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // Active projects to sync (matching AGENTS.md project listing)
 const PROJECTS = [
     'annotated',
+    'agent-toolkit-for-aws',
     'berean',
     'caren',
     'first-things-first',
@@ -24,6 +25,7 @@ const PROJECTS = [
     'home-ai',
     'krusch-dbos-mcp',
     'krusch-agentic-mcp',
+    'krusch-context-mcp',
     'krusch-infra-mcp',
     'krusch-ide',
     'lightmind',
@@ -35,6 +37,7 @@ const PROJECTS = [
     'roughin-suite',
     'signet',
     'spark',
+    'vllm',
 ];
 
 // Also sync root-level dirs
@@ -62,7 +65,7 @@ async function main() {
         try {
             console.log(`\n📦 Syncing project: ${project}`);
             const { stdout, stderr } = await exec('node', [syncScript, projectPath], {
-                timeout: 300_000, // 5 min per project
+                timeout: 3600_000, // 60 min per project
                 env: { ...process.env }
             });
             if (stdout) console.log(stdout);
@@ -77,7 +80,7 @@ async function main() {
         try {
             console.log(`\n📦 Syncing root dir: ${dir.name}`);
             const { stdout, stderr } = await exec('node', [syncScript, dir.path], {
-                timeout: 300_000,
+                timeout: 3600_000,
                 env: { ...process.env }
             });
             if (stdout) console.log(stdout);

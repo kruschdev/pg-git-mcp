@@ -1,0 +1,14 @@
+.agent/
+GEMINI_INFLIGHT.md
+node_modules/
+client/node_modules/
+.env
+config.json
+.DS_Store
+spec.md
+tests/
+test*.js
+count_memories.js
+list_schema.js
+list_tables.js
+sync.log

@@ -8,8 +8,8 @@ This repository contains a standalone **PostgreSQL-Backed Version Control System
 ## Architecture & Rules
 
 1. **The MCP SDK**: All communication must strictly adhere to the official `@modelcontextprotocol/sdk`. We use `StdioServerTransport` for all I/O.
-2. **Semantic Blobs**: Git objects (Blobs, Trees, Commits) are mapped directly into SQL (`db/schema.sql`). Blobs contain an `embedding vector(768)` generated locally via Ollama.
-3. **Temporal Decay**: The `krusch_context_search_code` tool dynamically calculates cosine similarity using the `pgvector` HNSW index, and explicitly multiplies the score by an exponential time decay `exp(-0.01 * age)` using the `last_seen_at` timestamp.
+2. **Semantic Blobs**: Git objects (Blobs, Trees, Commits) are mapped directly into SQL (`db/schema.sql`). Blobs contain an `embedding vector(1024)` generated locally via Ollama (`bge-large`).
+3. **Temporal Decay**: The `searchBlobs()` function (exposed as `pg_git_semantic_search` in standalone mode, or `krusch_context_search_code` via [Krusch Context MCP](https://github.com/kruschdev/krusch-context-mcp)) dynamically calculates cosine similarity using the `pgvector` HNSW index, and explicitly multiplies the score by an exponential time decay `exp(-0.01 * age)` using the `last_seen_at` timestamp.
 4. **Standalone Purity**: This project is completely standalone. Always use standard `pg`, `dotenv`, and native `child_process.exec` (for git operations).
 
 ## Development Workflows

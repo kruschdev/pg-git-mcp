@@ -1,8 +1,19 @@
 {
-  "name": "pg-git",
-  "version": "1.0.0",
+  "name": "pg-git-mcp",
+  "version": "1.0.2",
   "description": "A PostgreSQL-backed Git implementation and semantic memory MCP server for AI IDEs.",
-  "main": "index.js",
+  "main": "server/index.js",
+  "bin": {
+    "pg-git-mcp": "./server/mcp.js"
+  },
+  "files": [
+    "server",
+    "db",
+    "lib",
+    "scripts",
+    "client/dist",
+    "config.js"
+  ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "node server/index.js & cd client && npm run dev",

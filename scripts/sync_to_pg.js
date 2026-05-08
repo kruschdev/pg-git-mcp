@@ -5,7 +5,7 @@ import path from 'path';
 import crypto from 'crypto';
 import { query, pool } from '../db/pool.js';
 import { hashContent } from '../server/git-engine.js';
-import { getEmbedding, isEmbeddable, MAX_EMBED_CHARS } from '../lib/embedding.js';
+import { getEmbedding, getChunkedCentroidEmbedding, isEmbeddable, MAX_EMBED_CHARS } from '../lib/embedding.js';
 
 const EXCLUDED_DIRS = new Set(['.git', 'node_modules', 'dist', 'build', '__pycache__', 'data', 'tmp', '.gemini', '.venv', '.vscode', 'nodes', 'sandbox', 'logs']);
 
@@ -33,9 +33,10 @@ async function insertBlob(repoId, buffer, filePath, rootDir) {
         // Generate summary (first 500 chars) for search result display
         summary = text.substring(0, 500);
         console.log(`[Embed] Generating semantic vector for: ${path.basename(filePath)}`);
-        const textToEmbed = text.substring(0, 2000);
-        const vector = await getEmbedding(textToEmbed);
-        if (vector) {
+        // Embed up to 30,000 characters to prevent endless loops on massive minified files
+        const textToEmbed = text.substring(0, 30000);
+        const vector = await getChunkedCentroidEmbedding(textToEmbed);
+        if (vector && vector.length > 0) {
             embeddingStr = `[${vector.join(',')}]`;
         }
     }
