@@ -43,7 +43,7 @@ export const config = {
         poolSize: baseConfig.db?.poolSize || 10
     },
     ai: {
-        embedModel: envOr('EMBED_MODEL', baseConfig.ai?.embedModel, 'qwen2.5-coder:1.5b'),
+        embedModel: envOr('EMBED_MODEL', baseConfig.ai?.embedModel, 'bge-large'),
         ollamaUrl: envOr('OLLAMA_URL', baseConfig.ai?.ollamaUrl, 'http://localhost:11434')
     }
 };
