@@ -15,10 +15,10 @@ import { getChunkedCentroidEmbedding, isEmbeddable } from '../lib/embedding.js';
 import { ollamaQueue } from '../lib/embedding.js';
 
 const pool = new pg.Pool({
-    host: process.env.DB_HOST || '10.0.0.85',
+    host: process.env.DB_HOST || 'localhost',
     port: process.env.DB_PORT || 5434,
-    user: process.env.DB_USER || 'openclaw',
-    password: process.env.DB_PASSWORD || 'openclaw_password',
+    user: process.env.DB_USER || 'postgres',
+    password: process.env.DB_PASSWORD || '',
     database: process.env.DB_NAME || 'kruschdb'
 });
 

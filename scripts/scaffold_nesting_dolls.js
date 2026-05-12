@@ -9,9 +9,12 @@
 import fs from 'fs';
 import path from 'path';
 import { execSync } from 'child_process';
+import { fileURLToPath } from 'url';
 
-const PROJECTS_DIR = '/home/kruschdev/homelab/projects';
-const PG_GIT_SYNC = 'node /home/kruschdev/homelab/projects/pg-git/scripts/sync_to_pg.js';
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const MONOREPO_ROOT = path.resolve(__dirname, '../../..');
+const PROJECTS_DIR = path.join(MONOREPO_ROOT, 'projects');
+const PG_GIT_SYNC = 'node $(git rev-parse --show-toplevel)/projects/pg-git/scripts/sync_to_pg.js';
 
 // Active projects from sync_all_projects.js + sentinel
 const ACTIVE_PROJECTS = [
@@ -50,7 +53,7 @@ description: Pause ${name} and save semantic state
 
 1. **Semantic Snapshot**:
    \`\`\`bash
-   ${PG_GIT_SYNC} /home/kruschdev/homelab/projects/${name}
+   ${PG_GIT_SYNC} .
    \`\`\`
 
 2. **Update GEMINI_INFLIGHT.md**:

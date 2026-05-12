@@ -40,15 +40,16 @@ const PROJECTS = [
     'vllm',
 ];
 
-// Also sync root-level dirs
+// Also sync root-level dirs (relative to monorepo root)
+const MONOREPO_ROOT = path.resolve(__dirname, '../../..');
 const ROOT_DIRS = [
-    { name: 'scripts', path: '/home/kruschdev/homelab/scripts' },
-    { name: 'lib', path: '/home/kruschdev/homelab/lib' },
-    { name: 'lib-py', path: '/home/kruschdev/homelab/lib-py' },
-    { name: '.agent', path: '/home/kruschdev/homelab/.agent' },
+    { name: 'scripts', path: path.join(MONOREPO_ROOT, 'scripts') },
+    { name: 'lib', path: path.join(MONOREPO_ROOT, 'lib') },
+    { name: 'lib-py', path: path.join(MONOREPO_ROOT, 'lib-py') },
+    { name: '.agent', path: path.join(MONOREPO_ROOT, '.agent') },
 ];
 
-const HOMELAB_ROOT = '/home/kruschdev/homelab/projects';
+const HOMELAB_ROOT = path.join(MONOREPO_ROOT, 'projects');
 
 async function main() {
     const { execFile } = await import('child_process');
