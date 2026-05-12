@@ -26,9 +26,13 @@ const pool = new pg.Pool({
 const HOMELAB_REPOS = new Set([
     'annotated', 'agent-toolkit-for-aws', 'berean', 'caren', 'first-things-first',
     'heyjb', 'hivemind-companion-ext', 'home-ai', 'krusch-dbos-mcp', 'krusch-agentic-mcp',
-    'krusch-context-mcp', 'krusch-infra-mcp', 'krusch-ide', 'lightmind', 'money-machine',
-    'perkins_snow_removal', 'pg-git', 'pocket-lawyer', 'pocket-lawyer-marketing',
-    'roughin-suite', 'signet', 'spark', 'vllm', 'scripts', 'lib', 'lib-py', '.agent'
+    'krusch-context-mcp', 'krusch-infra-mcp', 'krusch-ide', 'krusch-frontend-mcp',
+    'krusch-nexus', 'krusch-oss', 'krusch-pg-agent', 'krusch-pocketlawyer-mcp',
+    'krusch-sentinel-mcp', 'krusch-sequential-mcp', 'krusch-cascade-router', 'krusch-router',
+    'lightmind', 'money-machine', 'perkins_snow_removal', 'pg-git',
+    'pocket-lawyer', 'pocket-lawyer-marketing', 'roughin-suite', 'signet', 'spark',
+    'vllm', 'halo', 'smart-router-os', 'homelab-voice', 'homelab',
+    'scripts', 'lib', 'lib-py', '.agent'
 ]);
 
 async function main() {
