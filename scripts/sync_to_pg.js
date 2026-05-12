@@ -6,8 +6,16 @@ import crypto from 'crypto';
 import { query, pool } from '../db/pool.js';
 import { hashContent } from '../server/git-engine.js';
 import { getEmbedding, getChunkedCentroidEmbedding, isEmbeddable, MAX_EMBED_CHARS } from '../lib/embedding.js';
+import { ollamaQueue } from '../lib/embedding.js';
 
-const EXCLUDED_DIRS = new Set(['.git', 'node_modules', 'dist', 'build', '__pycache__', 'data', 'tmp', '.gemini', '.venv', '.vscode', 'nodes', 'sandbox', 'logs']);
+const EXCLUDED_DIRS = new Set(['.git', 'node_modules', 'dist', 'build', '__pycache__', 'data', 'tmp', '.gemini', '.venv', 'venv', 'bench_venv', 'mcp_env', '.vscode', 'nodes', 'sandbox', 'logs']);
+
+/** Max file size for non-embeddable files (skip large binaries like .zip entirely) */
+const MAX_BINARY_SIZE = 100 * 1024; // 100KB
+/** Max file size for embeddable text files (skip massive minified bundles) */
+const MAX_EMBEDDABLE_SIZE = 500 * 1024; // 500KB
+
+let syncProgress = { processed: 0, total: 0, embedded: 0, skipped: 0 };
 
 async function insertBlob(repoId, buffer, filePath, rootDir) {
     const sha = hashContent(buffer);
@@ -47,6 +55,7 @@ async function insertBlob(repoId, buffer, filePath, rootDir) {
             `INSERT INTO blobs (id, repository_id, size, embedding, file_name, file_path, summary, storage_mode) VALUES ($1, $2, $3, $4::vector, $5, $6, $7, 'pointer') ON CONFLICT (id) DO UPDATE SET embedding = EXCLUDED.embedding`,
             [sha, repoId, buffer.length, embeddingStr, fileName, relativePath, summary]
         );
+        syncProgress.embedded++;
     } else {
         await query(
             `INSERT INTO blobs (id, repository_id, size, file_name, file_path, summary, storage_mode) VALUES ($1, $2, $3, $4, $5, $6, 'pointer') ON CONFLICT (id) DO NOTHING`,
@@ -89,16 +98,39 @@ async function processDirectory(dirPath, repoId, rootDir) {
                 throw e;
             }
             if (stat.isDirectory()) {
-                console.log(`[Skip] Ignoring directory symlink: ${fullPath}`);
                 continue;
             }
+            
+            const ext = path.extname(item.name).toLowerCase();
+            const embeddable = isEmbeddable(ext);
+            
+            // Skip large binary files entirely (they bloat the DB without providing search value)
+            if (!embeddable && stat.size > MAX_BINARY_SIZE) {
+                syncProgress.skipped++;
+                continue;
+            }
+            
+            // Skip massive text files (minified bundles, huge generated code)
+            if (embeddable && stat.size > MAX_EMBEDDABLE_SIZE) {
+                syncProgress.skipped++;
+                console.log(`[Skip] Large text file: ${path.relative(rootDir, fullPath)} (${Math.round(stat.size/1024)}KB)`);
+                continue;
+            }
+            
+            // General hard cap: no file over 50MB
             if (stat.size > 50 * 1024 * 1024) {
-                console.log(`[Skip] Ignoring large file: ${fullPath} (${Math.round(stat.size/1024/1024)}MB)`);
+                syncProgress.skipped++;
                 continue;
             }
+            
             const buffer = await fs.readFile(fullPath);
             const blobSha = await insertBlob(repoId, buffer, fullPath, rootDir);
             entries.push({ type: 'blob', name: item.name, object_id: blobSha });
+            
+            syncProgress.processed++;
+            if (syncProgress.processed % 100 === 0) {
+                console.log(`[Progress] ${syncProgress.processed} files processed, ${syncProgress.embedded} embedded, ${syncProgress.skipped} skipped`);
+            }
         }
     }
 
@@ -124,6 +156,7 @@ async function main() {
     const targetDir = process.argv[2] ? path.resolve(process.argv[2]) : process.cwd();
     const repoName = path.basename(targetDir);
     
+    syncProgress = { processed: 0, total: 0, embedded: 0, skipped: 0 };
     console.log(`Starting Semantic PG-Git Snapshot for: ${repoName}`);
     console.log(`Target Directory: ${targetDir}`);
 
@@ -180,6 +213,14 @@ async function main() {
     }
 
     console.log(`✅ Snapshot complete! Commit SHA: ${commitSha}`);
+    console.log(`   Files: ${syncProgress.processed} processed, ${syncProgress.embedded} embedded, ${syncProgress.skipped} skipped`);
+    
+    // Log fleet health if available
+    try {
+        const health = ollamaQueue.health();
+        console.log(`   Fleet: ${health.map(h => `${h.endpoint.split('//')[1]} (✓${h.successes}/✗${h.failures})`).join(', ')}`);
+    } catch (_) { /* queue may not be initialized */ }
+    
     await pool.end();
 }
 

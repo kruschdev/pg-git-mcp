@@ -1,6 +1,6 @@
 {
   "name": "pg-git-mcp",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "A PostgreSQL-backed Git implementation and semantic memory MCP server for AI IDEs.",
   "main": "server/index.js",
   "bin": {

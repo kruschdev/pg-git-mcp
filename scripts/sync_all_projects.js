@@ -57,38 +57,55 @@ async function main() {
 
     const syncScript = path.join(__dirname, 'sync_to_pg.js');
 
-    console.log('=== Batch Sync: All Active Projects ===\n');
+    // Parse --parallel=N flag (default 3)
+    const parallelFlag = process.argv.find(a => a.startsWith('--parallel='));
+    const PARALLEL = Math.max(1, parseInt(parallelFlag?.split('=')[1] || '3', 10));
 
-    // Sync projects
-    for (const project of PROJECTS) {
-        const projectPath = path.join(HOMELAB_ROOT, project);
-        try {
-            console.log(`\n📦 Syncing project: ${project}`);
-            const { stdout, stderr } = await exec('node', [syncScript, projectPath], {
-                timeout: 3600_000, // 60 min per project
-                env: { ...process.env }
-            });
-            if (stdout) console.log(stdout);
-            if (stderr) console.error(stderr);
-        } catch (err) {
-            console.error(`❌ Failed to sync ${project}: ${err.message}`);
+    console.log(`=== Batch Sync: All Active Projects (parallel=${PARALLEL}) ===\n`);
+
+    /**
+     * Run sync tasks with concurrency limit.
+     * @param {{ name: string, path: string }[]} tasks
+     */
+    async function syncWithConcurrency(tasks) {
+        const results = { success: 0, failed: 0 };
+        const executing = new Set();
+
+        for (const task of tasks) {
+            const run = (async () => {
+                try {
+                    console.log(`\n📦 Syncing: ${task.name}`);
+                    const { stdout, stderr } = await exec('node', [syncScript, task.path], {
+                        timeout: 3600_000,
+                        env: { ...process.env }
+                    });
+                    if (stdout) console.log(stdout);
+                    if (stderr) console.error(stderr);
+                    results.success++;
+                } catch (err) {
+                    console.error(`❌ Failed to sync ${task.name}: ${err.message}`);
+                    results.failed++;
+                }
+            })();
+
+            executing.add(run);
+            run.finally(() => executing.delete(run));
+
+            if (executing.size >= PARALLEL) {
+                await Promise.race(executing);
+            }
         }
+        await Promise.all(executing);
+        return results;
     }
 
-    // Sync root dirs
-    for (const dir of ROOT_DIRS) {
-        try {
-            console.log(`\n📦 Syncing root dir: ${dir.name}`);
-            const { stdout, stderr } = await exec('node', [syncScript, dir.path], {
-                timeout: 3600_000,
-                env: { ...process.env }
-            });
-            if (stdout) console.log(stdout);
-            if (stderr) console.error(stderr);
-        } catch (err) {
-            console.error(`❌ Failed to sync ${dir.name}: ${err.message}`);
-        }
-    }
+    // Build unified task list
+    const allTasks = [
+        ...PROJECTS.map(p => ({ name: p, path: path.join(HOMELAB_ROOT, p) })),
+        ...ROOT_DIRS.map(d => ({ name: d.name, path: d.path }))
+    ];
+
+    const results = await syncWithConcurrency(allTasks);
 
     // Summary
     const res = await query(`
@@ -107,7 +124,7 @@ async function main() {
     }
 
     await pool.end();
-    console.log('\n✅ Batch sync complete!');
+    console.log(`\n✅ Batch sync complete! (${results.success} succeeded, ${results.failed} failed)`);
 }
 
 main().catch(err => {

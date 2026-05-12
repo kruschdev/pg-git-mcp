@@ -1,30 +1,19 @@
-# GEMINI_INFLIGHT — pg-git
+# PG-Git — Session State
 
-> Last updated: 2026-05-06
+**Status**: Published and Stable
+**Last Updated**: 2026-05-08
 
-## Active Environment & Nodes
-- Primary target: `kruschdev`
+## Current State
+- Successfully audited, rebranded, and published the underlying codebase memory engine as `pg-git-mcp` (v1.0.2) to the NPM registry.
+- Re-wired the main `krusch-context-mcp` project to consume `pg-git-mcp` via NPM, removing the cumbersome "Sibling Dependency" requirement.
+- The `client/dist` Web UI bundle successfully packaged and verified.
 
-## Currently Modifying
-- `config/external_docs.json` — manifest for external documentation sync
-- `scripts/sync_external_docs.js` — script to pull, chunk, and sync external documentation like `llms.txt`
+## MCP Tool Status
+- All 4 standalone native tools (`pg_git_list_repos`, `pg_git_read_tree`, `pg_git_read_blob`, `pg_git_semantic_search`) are documented and accurately reflected in the new README.
+- `krusch-context-mcp` fully imports and wraps these tools without issue.
 
-## Fragile / Don't Touch
-- `scripts/sync_to_pg.js` — Core functionality depends on symlink fixes applied earlier. 
+## Pending Schema Migrations
+- None. Schema is stable at 1024-dimension `bge-large`.
 
-## Active Background Processes
-- Running `sync_to_pg.js` on the pg-git repository to update the local codebase snapshot.
-- Ran semantic embedding for external `cloudflare-agents-docs` via `/sweetdreams` capable automated script.
-
-## Last Session
-- Fixed an `EISDIR` bug in `sync_to_pg.js` involving directory symlinks, imported Agent Skills from the Goose repo, and successfully implemented a fully automated external `llms.txt` pipeline for the homelab's `pg-git` memory.
-
-## Open Questions
-- None.
-
-## Discovered Issues
-- Massive >50,000 char documents were not chunked in `sync_to_pg.js`, which was resolved via chunking during download in the new sync script.
-
-## Next Steps
-- [ ] Add the execution of `sync_external_docs.js` into the formal `/sweetdreams` homelab workflow.
-- [ ] Monitor background index generation.
+## Ollama Model Health
+- `bge-large` operations verified as stable and successful during ingestion processes across the session.
